@@ -49,7 +49,7 @@ import Control.Monad.Except ( ExceptT(..), mapExceptT, runExceptT )
 #endif
 import Control.Monad.IO.Class ( MonadIO(..) )
 import Control.Monad.Reader
-    ( MonadTrans(..), when, ReaderT(..), MonadReader(ask, local, reader), mapReaderT )
+    ( MonadTrans(..), ReaderT(..), MonadReader(ask, local, reader), mapReaderT )
 import Control.Monad.RWS.Class ( MonadRWS )
 import qualified Control.Monad.RWS.Lazy as Lazy ( RWST(..), mapRWST )
 import qualified Control.Monad.RWS.Strict as Strict ( RWST(..), mapRWST )
@@ -59,6 +59,7 @@ import qualified Control.Monad.State.Strict as Strict ( StateT(..), mapStateT )
 import Control.Monad.Writer.Class ( MonadWriter )
 import qualified Control.Monad.Writer.Lazy as Lazy ( WriterT(..), mapWriterT )
 import qualified Control.Monad.Writer.Strict as Strict ( WriterT(..), mapWriterT )
+import Control.Monad (when)
 import Data.Dynamic ( Typeable, Dynamic )
 import qualified Data.IntMap as M
 import Data.IORef
