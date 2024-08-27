@@ -41,6 +41,7 @@ import Database.Selda.SQL.Print.Config
 import Database.Selda.Types (TableName, ColName)
 import Data.Int (Int64)
 import Control.Concurrent ( newMVar, putMVar, takeMVar, MVar )
+import Control.Monad.Base ( MonadBase (..) )
 import Control.Monad.Catch
     ( Exception, bracket, MonadCatch, MonadMask, MonadThrow(..) )
 import Control.Monad.Error.Class ( MonadError )
@@ -56,6 +57,7 @@ import qualified Control.Monad.RWS.Strict as Strict ( RWST(..), mapRWST )
 import Control.Monad.State.Class ( MonadState )
 import qualified Control.Monad.State.Lazy as Lazy ( StateT(..), mapStateT )
 import qualified Control.Monad.State.Strict as Strict ( StateT(..), mapStateT )
+import Control.Monad.Trans.Control ( MonadTransControl, MonadBaseControl (..), defaultLiftBaseWith, defaultRestoreM )
 import Control.Monad.Writer.Class ( MonadWriter )
 import qualified Control.Monad.Writer.Lazy as Lazy ( WriterT(..), mapWriterT )
 import qualified Control.Monad.Writer.Strict as Strict ( WriterT(..), mapWriterT )
@@ -294,10 +296,19 @@ withBackend m = withConnection (m . connBackend)
 -- | Monad transformer adding Selda SQL capabilities.
 newtype SeldaT b m a = S {unS :: ReaderT (SeldaConnection b) m a}
   deriving ( Functor, Applicative, Monad, MonadIO
+           , MonadTrans, MonadTransControl
            , MonadThrow, MonadCatch, MonadMask, MonadFail
            , MonadError e, MonadWriter w, MonadState s
            , MonadRWS r w s
            )
+
+instance MonadBase b m => MonadBase b (SeldaT b' m) where
+  liftBase = S . liftBase
+
+instance MonadBaseControl b m => MonadBaseControl b (SeldaT b' m) where
+  type StM (SeldaT b' m) a = StM m a
+  liftBaseWith = defaultLiftBaseWith
+  restoreM = defaultRestoreM
 
 -- This instance has to be defined manually since we want to pass through
 -- SeldaT's ReaderT.
@@ -309,9 +320,6 @@ instance MonadReader r m => MonadReader r (SeldaT b m) where
 instance (MonadIO m, MonadMask m) => MonadSelda (SeldaT b m) where
   type Backend (SeldaT b m) = b
   withConnection m = S ask >>= m
-
-instance MonadTrans (SeldaT b) where
-  lift = S . lift
 
 instance MonadSelda m => MonadSelda (ReaderT r m) where
   type Backend (ReaderT r m) = Backend m
